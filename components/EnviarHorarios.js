@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format, nextMonday, addDays } from 'date-fns';
+import { format, nextMonday } from 'date-fns'; // eliminamos addDays porque no se usa
 import es from 'date-fns/locale/es';
 
 export default function EnviarHorarios({ profesores, talleresAsignados }) {
