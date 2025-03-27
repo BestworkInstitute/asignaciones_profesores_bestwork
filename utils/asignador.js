@@ -12,7 +12,7 @@ export function asignarProfesores(profesoresOriginal, bloquesOriginales) {
     bloquesEsperados: p.bloquesAsignados
   }));
 
-  const BLOQUES_PROTEGIDOS = new Set(); // 🧱 SA bloqueos totales
+  const BLOQUES_PROTEGIDOS = new Set();
 
   // 🔹 1. Asignar SA09 y SA11 pareados sin duplicación ni donación
   let sa09Libres = bloques.filter(b => b.idBloque === 'SA09' && !b.profesorAsignado);
@@ -43,8 +43,6 @@ export function asignarProfesores(profesoresOriginal, bloquesOriginales) {
       usadosSA.add(prof.nombre);
     }
   }
-
-  // 🔐 REPARACIÓN DE SA BLOQUES SUELTOS → ya NO se hace más
 
   // 🔹 2. Ivette full prioridad
   const ivette = profesores.find(p => p.nombre.includes('Ivette Lissette Aguirre Reyes'));
@@ -128,20 +126,11 @@ export function asignarProfesores(profesoresOriginal, bloquesOriginales) {
     }
   }
 
-  // 🧃 Asignar bloques restantes a los de alta carga
+  // 🧃 Asignación FINAL: asegurar que NINGÚN bloque quede sin asignar
   const bloquesRestantes = bloques.filter(b => !b.profesorAsignado && !['SA09', 'SA11'].includes(b.idBloque));
-  const candidatosFinales = profesores
-    .filter(p => p.bloquesEsperados >= 10)
-    .sort((a, b) => a.asignados - b.asignados);
 
-  let index = 0;
   for (const bloque of bloquesRestantes) {
-    let intentos = 0;
-    let asignado = false;
-
-    while (intentos < candidatosFinales.length && !asignado) {
-      const prof = candidatosFinales[index % candidatosFinales.length];
-
+    for (const prof of profesores) {
       if (
         prof.bloquesDisponibles.includes(bloque.idBloque) &&
         !prof.bloquesOcupados.has(bloque.idBloque)
@@ -149,11 +138,8 @@ export function asignarProfesores(profesoresOriginal, bloquesOriginales) {
         bloque.profesorAsignado = prof.nombre;
         prof.bloquesOcupados.add(bloque.idBloque);
         prof.asignados++;
-        asignado = true;
+        break; // ir al siguiente bloque
       }
-
-      index++;
-      intentos++;
     }
   }
 
