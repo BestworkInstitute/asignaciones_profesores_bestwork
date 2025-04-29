@@ -24,7 +24,7 @@ export default function Home() {
     const workbook = XLSX.read(data);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }).slice(1);
-  
+
     const parsed = rows.map(r => ({
       nombre: r[0],
       bloquesDisponibles: typeof r[1] === 'string' ? r[1].split(', ') : [],
@@ -32,10 +32,9 @@ export default function Home() {
       correo: typeof r[4] === 'string' ? r[4].trim() : '',
       asignados: 0,
     }));
-  
+
     setProfesores(parsed);
   };
-  
 
   const leerArchivoBloques = async (e) => {
     const file = e.target.files[0];
@@ -87,7 +86,6 @@ export default function Home() {
       body: talleresAsignados.map(t => [t.curso, t.idBloque, t.profesorAsignado || '—']),
     });
 
-    // Resumen Final
     const resumen = {};
     talleresAsignados.forEach(t => {
       if (!t.profesorAsignado) return;
@@ -117,7 +115,6 @@ export default function Home() {
       ]),
     });
 
-    // 🆕 NUEVO: Resumen detallado con día, bloque, curso
     const resumenDetalle = {};
     talleresAsignados.forEach(t => {
       if (!t.profesorAsignado) return;
@@ -181,105 +178,6 @@ export default function Home() {
 
       {/* RESUMEN FINAL */}
       {talleresAsignados.length > 0 && (() => {
-        const resumen = {};
-        talleresAsignados.forEach(t => {
-          if (!t.profesorAsignado) return;
-          if (!resumen[t.profesorAsignado]) {
-            const prof = profesores.find(p => p.nombre === t.profesorAsignado);
-            resumen[t.profesorAsignado] = {
-              esperados: prof?.bloquesAsignados || 0,
-              asignados: 0,
-              bloques: new Set(),
-              cursos: new Set()
-            };
-          }
-          resumen[t.profesorAsignado].asignados++;
-          resumen[t.profesorAsignado].bloques.add(t.idBloque);
-          resumen[t.profesorAsignado].cursos.add(t.curso);
-        });
-
-        const datos = Object.entries(resumen).map(([n, d]) => [
-          n,
-          d.esperados,
-          d.asignados,
-          [...d.bloques].join(', '),
-          [...d.cursos].join(', ')
-        ]);
-
-        return renderTable(
-          'Resumen Final por Profesor',
-          ['Profesor', 'Bloques Esperados', 'Asignados', 'Bloques', 'Cursos'],
-          datos,
-          () => {
-            const datosExcel = Object.entries(resumen).map(([n, d]) => ({
-              Profesor: n,
-              Esperados: d.esperados,
-              Asignados: d.asignados,
-              Bloques: [...d.bloques].join(', '),
-              Cursos: [...d.cursos].join(', ')
-            }));
-            exportToExcel(datosExcel, 'resumen_final.xlsx');
-          }
-        );
-      })()}
-
-      {talleresAsignados.length > 0 && (() => {
-        const resumenPorProfesor = {};
-
-        talleresAsignados.forEach(t => {
-          if (!t.profesorAsignado) return;
-          if (!resumenPorProfesor[t.profesorAsignado]) {
-            resumenPorProfesor[t.profesorAsignado] = {
-              cantidad: 0,
-              bloques: []
-            };
-          }
-
-          resumenPorProfesor[t.profesorAsignado].cantidad++;
-          resumenPorProfesor[t.profesorAsignado].bloques.push(
-            `${t.dia} ${t.bloque} ${t.curso}`
-          );
-        });
-
-        const datos = Object.entries(resumenPorProfesor).map(([profesor, info]) => [
-          profesor,
-          info.cantidad,
-          info.bloques.join(' | ')
-        ]);
-
-        return renderTable(
-          'Resumen Detallado por Profesor (Día, Bloque, Curso)',
-          ['Profesor', 'Cantidad de Bloques Asignados', 'Bloques Asignados'],
-          datos,
-          () => {
-            const datosExcel = Object.entries(resumenPorProfesor).map(([profesor, info]) => ({
-              Profesor: profesor,
-              Cantidad: info.cantidad,
-              Bloques: info.bloques.join(' | ')
-            }));
-            exportToExcel(datosExcel, 'resumen_detallado.xlsx');
-          }
-        );
-      })()}
-
-{talleresAsignados.length > 0 && (
-  <EnviarHorarios
-    profesores={profesores}
-    talleresAsignados={talleresAsignados}
-  />
-)}
-
-
-      {/* BOTÓN PDF */}
-      {talleresAsignados.length > 0 && (
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <button onClick={generarInformePDF} style={styles.buttonPDF}>
-            📄 Descargar Informe PDF
-          </button>
-        </div>
-      )}
-      {/* 🔽 BLOQUES DISPONIBLES DESPUÉS DE LA CARGA */}
-      {talleresAsignados.length > 0 && (() => {
         const disponiblesPostCarga = profesores.map(p => {
           const bloquesRestantes = p.bloquesDisponibles.filter(b => !p.bloquesOcupados.has(b));
           return {
@@ -289,7 +187,7 @@ export default function Home() {
         });
 
         const headers = ['Profesor', 'Bloques Disponibles Restantes'];
-        const rows = disponiblesPostCarga.map(p => [p.nombre, bloquesRestantes.join(', ')]);
+        const rows = disponiblesPostCarga.map(p => [p.nombre, p.bloquesRestantes.join(', ')]);
 
         return renderTable(
           'Bloques Disponibles Después de la Carga',
@@ -298,13 +196,24 @@ export default function Home() {
           () => {
             const datosExcel = disponiblesPostCarga.map(p => ({
               Profesor: p.nombre,
-              'Bloques Disponibles Restantes': bloquesRestantes.join(', ')
+              'Bloques Disponibles Restantes': p.bloquesRestantes.join(', ')
             }));
             exportToExcel(datosExcel, 'bloques_disponibles_post_carga.xlsx');
           }
         );
       })()}
 
+      {talleresAsignados.length > 0 && (
+        <EnviarHorarios profesores={profesores} talleresAsignados={talleresAsignados} />
+      )}
+
+      {talleresAsignados.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <button onClick={generarInformePDF} style={styles.buttonPDF}>
+            📄 Descargar Informe PDF
+          </button>
+        </div>
+      )}
     </div>
   );
 }
