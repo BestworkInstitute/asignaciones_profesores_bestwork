@@ -278,6 +278,33 @@ export default function Home() {
           </button>
         </div>
       )}
+      {/* 🔽 BLOQUES DISPONIBLES DESPUÉS DE LA CARGA */}
+      {talleresAsignados.length > 0 && (() => {
+        const disponiblesPostCarga = profesores.map(p => {
+          const bloquesRestantes = p.bloquesDisponibles.filter(b => !p.bloquesOcupados.has(b));
+          return {
+            nombre: p.nombre,
+            bloquesRestantes
+          };
+        });
+
+        const headers = ['Profesor', 'Bloques Disponibles Restantes'];
+        const rows = disponiblesPostCarga.map(p => [p.nombre, bloquesRestantes.join(', ')]);
+
+        return renderTable(
+          'Bloques Disponibles Después de la Carga',
+          headers,
+          rows,
+          () => {
+            const datosExcel = disponiblesPostCarga.map(p => ({
+              Profesor: p.nombre,
+              'Bloques Disponibles Restantes': bloquesRestantes.join(', ')
+            }));
+            exportToExcel(datosExcel, 'bloques_disponibles_post_carga.xlsx');
+          }
+        );
+      })()}
+
     </div>
   );
 }
