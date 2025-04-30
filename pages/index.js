@@ -11,6 +11,33 @@ export default function Home() {
   const [talleresOriginales, setTalleresOriginales] = useState([]);
   const [talleresAsignados, setTalleresAsignados] = useState([]);
 
+  // 🔧 Esta función va dentro del componente Home (debajo de generarInformePDF)
+const renderDisponibilidadFinal = () => {
+  const disponibilidadFinal = profesores.map(p => {
+    const bloquesAsignados = talleresAsignados
+      .filter(t => t.profesorAsignado === p.nombre)
+      .map(t => t.idBloque);
+
+    const disponiblesFinal = p.bloquesDisponibles.filter(b => !bloquesAsignados.includes(b));
+
+    return [p.nombre, disponiblesFinal.join(', ')];
+  });
+
+  return renderTable(
+    'Disponibilidad Final de Profesores',
+    ['Profesor', 'Bloques Disponibles Restantes'],
+    disponibilidadFinal,
+    () => {
+      const dataExcel = disponibilidadFinal.map(([nombre, disponibles]) => ({
+        Profesor: nombre,
+        DisponiblesFinales: disponibles
+      }));
+      exportToExcel(dataExcel, 'disponibilidad_final.xlsx');
+    }
+  );
+};
+
+
   useEffect(() => {
     if (profesores.length > 0 && talleresOriginales.length > 0) {
       const asignados = asignarProfesores(profesores, talleresOriginales);
@@ -261,7 +288,7 @@ export default function Home() {
           }
         );
       })()}
-
+{talleresAsignados.length > 0 && renderDisponibilidadFinal()}
 {talleresAsignados.length > 0 && (
   <EnviarHorarios
     profesores={profesores}
@@ -335,3 +362,6 @@ function renderTable(title, headers, rows, onDownload) {
     </section>
   );
 }
+
+
+
