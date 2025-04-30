@@ -43,7 +43,7 @@ Junto con saludar, enviamos las asignaciones de la ${semanaTexto}.
 
 Para confirmar asignaciones ingresar al siguiente link, el que nos llevará al Campus Virtual donde desplegando la pestaña “General” veremos “Confirmación de Carga Académica”, lugar donde además también debemos mencionar, si es el caso, el día y la hora de la asignación que no pueden tomar.
 
-IMPORTANTE: El plazo para confirmar las asignaciones es hasta hoy ${fechaLimite}, de no haber confirmado se considerará que no puede asistir a ningún taller y estos serán reasignados.
+IMPORTANTE: El plazo para confirmar las asignaciones es hasta el ${fechaLimite} a las 17:00 Hrs. De no haber confirmado se considerará que no puede asistir a ningún taller y estos serán reasignados.
 
 IMPORTANTE: Al realizar un taller NO ingresar como invitado ni con una cuenta personal de Zoom, de tal forma no podrá iniciar el taller.
 
@@ -51,7 +51,7 @@ Ingresar primero a la página de Zoom, asegurarnos que no hay ninguna sesión ab
 cerrar si las hay e iniciar sesión con la sala que le corresponde al taller a realizar.
 Luego, recién ir al campus, ir al nivel del taller a cubrir y hacer clic en el link de Zoom respectivo.
 
-Resumen de Bloques asignados:
+Resumen de Bloques Semanal:
 ${resumenBloques}
 
 Link: https://campusvirtual.bestwork.cl/course/view.php?id=233
@@ -71,7 +71,7 @@ ${resumenBloques}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: prof.correo,
-            subject: `Asignación de Talleres - ${prof.nombre}`,
+            subject: `Horarios Captación en Terreno - ${prof.nombre}`,
             text: mensajeFinal,
             from: 'ftobar@bestwork.cl',
           }),
