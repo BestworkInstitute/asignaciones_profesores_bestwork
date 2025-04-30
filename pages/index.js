@@ -67,7 +67,8 @@ export default function Home() {
     doc.setFontSize(18);
     doc.text('Bestwork - Asignación de Talleres', 14, 20);
     doc.setFontSize(10);
-    doc.text(Generado el ${new Date().toLocaleDateString('es-CL')}, 14, 28);
+    doc.text(`Generado el ${new Date().toLocaleDateString('es-CL')}`, 14, 28);
+
 
     autoTable(doc, {
       startY: 35,
@@ -124,7 +125,7 @@ export default function Home() {
       if (!resumenDetalle[t.profesorAsignado]) {
         resumenDetalle[t.profesorAsignado] = [];
       }
-      resumenDetalle[t.profesorAsignado].push(${t.dia} ${t.bloque} ${t.curso});
+      resumenDetalle[t.profesorAsignado].push(`${t.dia} ${t.bloque} ${t.curso}`);
     });
 
     autoTable(doc, {
@@ -236,9 +237,8 @@ export default function Home() {
           }
 
           resumenPorProfesor[t.profesorAsignado].cantidad++;
-          resumenPorProfesor[t.profesorAsignado].bloques.push(
-            ${t.dia} ${t.bloque} ${t.curso}
-          );
+          resumenPorProfesor[t.profesorAsignado].bloques.push(`${t.dia} ${t.bloque} ${t.curso}`);
+
         });
 
         const datos = Object.entries(resumenPorProfesor).map(([profesor, info]) => [
