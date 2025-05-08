@@ -11,7 +11,7 @@ export default function Home() {
   const [talleresOriginales, setTalleresOriginales] = useState([]);
   const [talleresAsignados, setTalleresAsignados] = useState([]);
 
-  // 🔧 Esta función va dentro del componente Home (debajo de generarInformePDF)
+  // 🔧 Esta función va dentro del componente Home (debajo de generarInforme en PDF)
 const renderDisponibilidadFinal = () => {
   const disponibilidadFinal = profesores.map(p => {
     const bloquesAsignados = talleresAsignados
