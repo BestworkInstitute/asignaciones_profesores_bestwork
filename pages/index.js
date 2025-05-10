@@ -5,38 +5,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { asignarProfesores } from '../utils/asignador';
 import EnviarHorarios from '../components/EnviarHorarios';
+import GoogleSheetsWriter from '../components/GoogleSheetsWriter';
 
 export default function Home() {
   const [profesores, setProfesores] = useState([]);
   const [talleresOriginales, setTalleresOriginales] = useState([]);
   const [talleresAsignados, setTalleresAsignados] = useState([]);
-
-  // 🔧 Esta función va dentro del componente Home (debajo de generarInforme en PDF)
-const renderDisponibilidadFinal = () => {
-  const disponibilidadFinal = profesores.map(p => {
-    const bloquesAsignados = talleresAsignados
-      .filter(t => t.profesorAsignado === p.nombre)
-      .map(t => t.idBloque);
-
-    const disponiblesFinal = p.bloquesDisponibles.filter(b => !bloquesAsignados.includes(b));
-
-    return [p.nombre, disponiblesFinal.join(', ')];
-  });
-
-  return renderTable(
-    'Disponibilidad Final de Profesores',
-    ['Profesor', 'Bloques Disponibles Restantes'],
-    disponibilidadFinal,
-    () => {
-      const dataExcel = disponibilidadFinal.map(([nombre, disponibles]) => ({
-        Profesor: nombre,
-        DisponiblesFinales: disponibles
-      }));
-      exportToExcel(dataExcel, 'disponibilidad_final.xlsx');
-    }
-  );
-};
-
 
   useEffect(() => {
     if (profesores.length > 0 && talleresOriginales.length > 0) {
@@ -51,7 +25,7 @@ const renderDisponibilidadFinal = () => {
     const workbook = XLSX.read(data);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }).slice(1);
-  
+
     const parsed = rows.map(r => ({
       nombre: r[0],
       bloquesDisponibles: typeof r[1] === 'string' ? r[1].split(', ') : [],
@@ -59,10 +33,9 @@ const renderDisponibilidadFinal = () => {
       correo: typeof r[4] === 'string' ? r[4].trim() : '',
       asignados: 0,
     }));
-  
+
     setProfesores(parsed);
   };
-  
 
   const leerArchivoBloques = async (e) => {
     const file = e.target.files[0];
@@ -96,7 +69,6 @@ const renderDisponibilidadFinal = () => {
     doc.setFontSize(10);
     doc.text(`Generado el ${new Date().toLocaleDateString('es-CL')}`, 14, 28);
 
-
     autoTable(doc, {
       startY: 35,
       head: [['Nombre', 'Bloques Asignados', 'Bloques Disponibles']],
@@ -115,7 +87,6 @@ const renderDisponibilidadFinal = () => {
       body: talleresAsignados.map(t => [t.curso, t.idBloque, t.profesorAsignado || '—']),
     });
 
-    // Resumen Final
     const resumen = {};
     talleresAsignados.forEach(t => {
       if (!t.profesorAsignado) return;
@@ -145,7 +116,6 @@ const renderDisponibilidadFinal = () => {
       ]),
     });
 
-    // 🆕 NUEVO: Resumen detallado con día, bloque, curso
     const resumenDetalle = {};
     talleresAsignados.forEach(t => {
       if (!t.profesorAsignado) return;
@@ -166,6 +136,29 @@ const renderDisponibilidadFinal = () => {
     });
 
     doc.save('informe_asignacion_profesores.pdf');
+  };
+
+  const renderDisponibilidadFinal = () => {
+    const disponibilidadFinal = profesores.map(p => {
+      const bloquesAsignados = talleresAsignados
+        .filter(t => t.profesorAsignado === p.nombre)
+        .map(t => t.idBloque);
+      const disponiblesFinal = p.bloquesDisponibles.filter(b => !bloquesAsignados.includes(b));
+      return [p.nombre, disponiblesFinal.join(', ')];
+    });
+
+    return renderTable(
+      'Disponibilidad Final de Profesores',
+      ['Profesor', 'Bloques Disponibles Restantes'],
+      disponibilidadFinal,
+      () => {
+        const dataExcel = disponibilidadFinal.map(([nombre, disponibles]) => ({
+          Profesor: nombre,
+          DisponiblesFinales: disponibles
+        }));
+        exportToExcel(dataExcel, 'disponibilidad_final.xlsx');
+      }
+    );
   };
 
   return (
@@ -207,105 +200,36 @@ const renderDisponibilidadFinal = () => {
         () => exportToExcel(talleresAsignados, 'talleres_asignados.xlsx')
       )}
 
-      {/* RESUMEN FINAL */}
-      {talleresAsignados.length > 0 && (() => {
-        const resumen = {};
-        talleresAsignados.forEach(t => {
-          if (!t.profesorAsignado) return;
-          if (!resumen[t.profesorAsignado]) {
-            const prof = profesores.find(p => p.nombre === t.profesorAsignado);
-            resumen[t.profesorAsignado] = {
-              esperados: prof?.bloquesAsignados || 0,
-              asignados: 0,
-              bloques: new Set(),
-              cursos: new Set()
-            };
-          }
-          resumen[t.profesorAsignado].asignados++;
-          resumen[t.profesorAsignado].bloques.add(t.idBloque);
-          resumen[t.profesorAsignado].cursos.add(t.curso);
-        });
+      {/* ENVIAR A GOOGLE SHEETS */}
+      {talleresAsignados.length > 0 && (
+        <GoogleSheetsWriter
+          talleresAsignados={talleresAsignados}
+          disponibilidadFinal={profesores.map(p => {
+            const bloquesAsignados = talleresAsignados
+              .filter(t => t.profesorAsignado === p.nombre)
+              .map(t => t.idBloque);
+            const disponibles = p.bloquesDisponibles.filter(b => !bloquesAsignados.includes(b));
+            return [p.nombre, disponibles.join(', ')];
+          })}
+        />
+      )}
 
-        const datos = Object.entries(resumen).map(([n, d]) => [
-          n,
-          d.esperados,
-          d.asignados,
-          [...d.bloques].join(', '),
-          [...d.cursos].join(', ')
-        ]);
+      {/* RESUMENES */}
+      {talleresAsignados.length > 0 && renderDisponibilidadFinal()}
 
-        return renderTable(
-          'Resumen Final por Profesor',
-          ['Profesor', 'Bloques Esperados', 'Asignados', 'Bloques', 'Cursos'],
-          datos,
-          () => {
-            const datosExcel = Object.entries(resumen).map(([n, d]) => ({
-              Profesor: n,
-              Esperados: d.esperados,
-              Asignados: d.asignados,
-              Bloques: [...d.bloques].join(', '),
-              Cursos: [...d.cursos].join(', ')
-            }));
-            exportToExcel(datosExcel, 'resumen_final.xlsx');
-          }
-        );
-      })()}
+      {talleresAsignados.length > 0 && (
+        <EnviarHorarios
+          profesores={profesores}
+          talleresAsignados={talleresAsignados}
+        />
+      )}
 
-      {talleresAsignados.length > 0 && (() => {
-        const resumenPorProfesor = {};
-
-        talleresAsignados.forEach(t => {
-          if (!t.profesorAsignado) return;
-          if (!resumenPorProfesor[t.profesorAsignado]) {
-            resumenPorProfesor[t.profesorAsignado] = {
-              cantidad: 0,
-              bloques: []
-            };
-          }
-
-          resumenPorProfesor[t.profesorAsignado].cantidad++;
-          resumenPorProfesor[t.profesorAsignado].bloques.push(`${t.dia} ${t.bloque} ${t.curso}`);
-
-        });
-
-        const datos = Object.entries(resumenPorProfesor).map(([profesor, info]) => [
-          profesor,
-          info.cantidad,
-          info.bloques.join(' | ')
-        ]);
-
-        return renderTable(
-          'Resumen Detallado por Profesor (Día, Bloque, Curso)',
-          ['Profesor', 'Cantidad de Bloques Asignados', 'Bloques Asignados'],
-          datos,
-          () => {
-            const datosExcel = Object.entries(resumenPorProfesor).map(([profesor, info]) => ({
-              Profesor: profesor,
-              Cantidad: info.cantidad,
-              Bloques: info.bloques.join(' | ')
-            }));
-            exportToExcel(datosExcel, 'resumen_detallado.xlsx');
-          }
-        );
-      })()}
-{talleresAsignados.length > 0 && renderDisponibilidadFinal()}
-{talleresAsignados.length > 0 && (
-  <EnviarHorarios
-    profesores={profesores}
-    talleresAsignados={talleresAsignados}
-  />
-)}
-
-
-      {/* BOTÓN PDF */}
       {talleresAsignados.length > 0 && (
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
           <button onClick={generarInformePDF} style={styles.buttonPDF}>
             📄 Descargar Informe PDF
           </button>
         </div>
-
-
       )}
     </div>
   );
@@ -362,6 +286,3 @@ function renderTable(title, headers, rows, onDownload) {
     </section>
   );
 }
-
-
-
