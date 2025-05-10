@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format, nextMonday } from 'date-fns'; // eliminamos addDays porque no se usa
+import { format, nextMonday } from 'date-fns';
 import es from 'date-fns/locale/es';
 
 export default function EnviarHorarios({ profesores, talleresAsignados }) {
@@ -8,6 +8,24 @@ export default function EnviarHorarios({ profesores, talleresAsignados }) {
   const [mensajePersonalizado, setMensajePersonalizado] = useState('');
   const [modo, setModo] = useState('original');
   const [enviando, setEnviando] = useState(false);
+
+  // 🔐 Diccionario de claves por profesor
+  const claves = {
+    'Prof. Felipe Alfonso Quilaqueo Lancapichun': 'FQUI382',
+    'Prof. Rodrigo Gonzalo Barrientos Astete': 'RBAR916',
+    'Prof. Bruno Palma Carrasco': 'BPAL204',
+    'Prof. Tania Carolina Ferreira Villarroel': 'TFER730',
+    'Prof. Carmen Tebre Peaspan': 'CTEB568',
+    'Prof. Bernardo Andres Inostroza Ibarra': 'BINO735',
+    'Prof. Javiera Soledad Quezada Santana': 'JQUE194',
+    'Prof. Mario Ignacio Larger Vergara': 'MLAR882',
+    'Prof. Alfonso Esteban Nuñez Tereucan': 'ANUN315',
+    'Prof. Maria Ignacia Espinoza Oyarzo': 'MESP607',
+    'Prof. Rosa Valentina Valencia Alcaide': 'RVAL420',
+    'Prof. Camila Andrea Veloz Molina': 'CVEL503',
+    'Prof. Ismael Antonio Michillanca Cuevas': 'IMIC911',
+    'Prof. Ivette Lissette Aguirre Reyes': 'IAGU754',
+  };
 
   const lunes = nextMonday(new Date());
   const semanaTexto = `semana del ${format(lunes, "dd/MM/yyyy", { locale: es })}`;
@@ -33,6 +51,8 @@ export default function EnviarHorarios({ profesores, talleresAsignados }) {
 
       const resumenBloques = bloques || '- No tiene bloques asignados esta semana -';
 
+      const clave = claves[prof.nombre] || 'NO DEFINIDA';
+
       let mensajeFinal = '';
 
       if (modo === 'original') {
@@ -55,6 +75,8 @@ Resumen de Bloques Semanal:
 ${resumenBloques}
 
 Link: https://campusvirtual.bestwork.cl/course/view.php?id=233
+
+IMPORTANTE: TU CLAVE DE ACCESO ES: ${clave}
         `.trim();
       } else {
         mensajeFinal = `
@@ -62,6 +84,8 @@ ${mensajePersonalizado.trim()}
 
 Resumen de Bloques asignados:
 ${resumenBloques}
+
+IMPORTANTE: TU CLAVE DE ACCESO ES: ${clave}
         `.trim();
       }
 
