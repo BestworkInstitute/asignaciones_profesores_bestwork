@@ -19,15 +19,15 @@ export default async function handler(req, res) {
   const sheets = google.sheets({ version: 'v4', auth });
 
   try {
-    // 🧹 Borrar hojas antes de escribir
+    // 🧹 Limpiar solo columnas A a D (TALLERES) y A a B (DISPONIBILIDAD)
     await sheets.spreadsheets.values.clear({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'TALLERES ASIGNADOS PROFESORES',
+      range: 'TALLERES ASIGNADOS PROFESORES!A:E',
     });
 
     await sheets.spreadsheets.values.clear({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'DISPONIBILIDAD FINAL PROFESORES',
+      range: 'DISPONIBILIDAD FINAL PROFESORES!A:B',
     });
 
     // 📤 Enviar talleres asignados
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'TALLERES ASIGNADOS PROFESORES',
+      range: 'TALLERES ASIGNADOS PROFESORES!A1',
       valueInputOption: 'RAW',
       requestBody: { values: talleresValues },
     });
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'DISPONIBILIDAD FINAL PROFESORES',
+      range: 'DISPONIBILIDAD FINAL PROFESORES!A1',
       valueInputOption: 'RAW',
       requestBody: { values: disponibilidadValues },
     });
