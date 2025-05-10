@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // 🧹 Limpiar solo columnas A a D (TALLERES) y A a B (DISPONIBILIDAD)
     await sheets.spreadsheets.values.clear({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'TALLERES ASIGNADOS PROFESORES!A:E',
+      range: 'TALLERES ASIGNADOS PROFESORES!A:D',
     });
 
     await sheets.spreadsheets.values.clear({
