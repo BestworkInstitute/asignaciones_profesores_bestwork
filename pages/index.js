@@ -217,6 +217,49 @@ export default function Home() {
       {/* RESUMENES */}
       {talleresAsignados.length > 0 && renderDisponibilidadFinal()}
 
+      {talleresAsignados.length > 0 && (() => {
+        const resumen = {};
+        talleresAsignados.forEach(t => {
+          if (!t.profesorAsignado) return;
+          if (!resumen[t.profesorAsignado]) {
+            const prof = profesores.find(p => p.nombre === t.profesorAsignado);
+            resumen[t.profesorAsignado] = {
+              esperados: prof?.bloquesAsignados || 0,
+              asignados: 0,
+              bloques: new Set(),
+              cursos: new Set()
+            };
+          }
+          resumen[t.profesorAsignado].asignados++;
+          resumen[t.profesorAsignado].bloques.add(t.idBloque);
+          resumen[t.profesorAsignado].cursos.add(t.curso);
+        });
+
+        const datosResumen = Object.entries(resumen).map(([n, d]) => [
+          n,
+          d.esperados,
+          d.asignados,
+          [...d.bloques].join(', '),
+          [...d.cursos].join(', ')
+        ]);
+
+        return renderTable(
+          'Resumen Final por Profesor',
+          ['Profesor', 'Bloques Esperados', 'Asignados', 'Bloques', 'Cursos'],
+          datosResumen,
+          () => {
+            const datosExcel = Object.entries(resumen).map(([n, d]) => ({
+              Profesor: n,
+              Esperados: d.esperados,
+              Asignados: d.asignados,
+              Bloques: [...d.bloques].join(', '),
+              Cursos: [...d.cursos].join(', ')
+            }));
+            exportToExcel(datosExcel, 'resumen_final.xlsx');
+          }
+        );
+      })()}
+
       {talleresAsignados.length > 0 && (
         <EnviarHorarios
           profesores={profesores}
